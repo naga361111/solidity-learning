@@ -56,5 +56,37 @@ describe("My Token", () => {
         })
 
     })
-
+    describe("TransferFrom", () => {
+        it("should emit Approval event", async () => {
+            const signer1 = signers[1];
+            await expect(
+                myTokenC.approve(signer1.address, hre.ethers.parseUnits("10", decimals))
+            ).to.emit(myTokenC, "Approval")
+                .withArgs(signer1.address, hre.ethers.parseUnits("10", decimals));
+        })
+        it("should be reveted with insufficient allowance err", async () => {
+            const signer0 = signers[0];
+            const signer1 = signers[1];
+            await expect(myTokenC
+                .connect(signer1)
+                .transferFrom(
+                    signer0.address,
+                    signer1.address,
+                    hre.ethers.parseUnits("1", decimals)
+                )).to.be.revertedWith("insufficient allowance!");
+        })
+        it("should transfer 0.5MT with approve & transferFrom (assignment)", async () => {
+            const signer0 = signers[0];
+            const signer1 = signers[1];
+            await myTokenC.approve(signer1.address, hre.ethers.parseUnits("10", decimals));
+            await myTokenC
+                .connect(signer1)
+                .transferFrom(
+                    signer0.address,
+                    signer1.address,
+                    hre.ethers.parseUnits("0.5", decimals)
+                );
+            expect(await myTokenC.balanceOf(signer1.address)).to.equal(hre.ethers.parseUnits("0.5", decimals));
+        })
+    })
 })
