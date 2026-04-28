@@ -33,26 +33,34 @@ describe("My Token", () => {
             const signer0 = signers[0];
             expect(await myTokenC.balanceOf(signer0.address)).to.equal(MINTING_AMOUNT * 10n ** DECIMALS);
         })
-        describe("Transfer", () => {
-            it("should have 0.5MT", async () => {
-                const signer0 = signers[0];
-                const signer1 = signers[1];
-                await expect(
-                    myTokenC.transfer(
-                        hre.ethers.parseUnits("0.5", DECIMALS),
-                        signer1.address
-                    )
-                ).to.emit(myTokenC, "Transfer").withArgs(signer0.address, signer1.address, hre.ethers.parseUnits("0.5", DECIMALS));
-                expect(await myTokenC.balanceOf(signer1.address)).to.equal(hre.ethers.parseUnits("0.5", DECIMALS));
-            })
-            it("should be reverted with insufficient balance err", async () => {
-                const signer1 = signers[1];
-                await expect(
-                    myTokenC.transfer(hre.ethers.parseUnits((MINTING_AMOUNT + 1n).toString(), DECIMALS), signer1.address)
-                ).to.be.revertedWith("insufficient balance!");
-            })
-        })
 
+        // TDD
+        it("should return or revert when minting infinitly", async () => {
+            const hacker = signers[2];
+            const mintingAgainAmount = hre.ethers.parseUnits("100", DECIMALS);
+            await expect(
+                myTokenC.connect(hacker).mint(mintingAgainAmount, hacker.address)
+            ).to.be.revertedWith("You are not authorized to manage this token");
+        })
+    })
+    describe("Transfer", () => {
+        it("should have 0.5MT", async () => {
+            const signer0 = signers[0];
+            const signer1 = signers[1];
+            await expect(
+                myTokenC.transfer(
+                    hre.ethers.parseUnits("0.5", DECIMALS),
+                    signer1.address
+                )
+            ).to.emit(myTokenC, "Transfer").withArgs(signer0.address, signer1.address, hre.ethers.parseUnits("0.5", DECIMALS));
+            expect(await myTokenC.balanceOf(signer1.address)).to.equal(hre.ethers.parseUnits("0.5", DECIMALS));
+        })
+        it("should be reverted with insufficient balance err", async () => {
+            const signer1 = signers[1];
+            await expect(
+                myTokenC.transfer(hre.ethers.parseUnits((MINTING_AMOUNT + 1n).toString(), DECIMALS), signer1.address)
+            ).to.be.revertedWith("insufficient balance!");
+        })
     })
     describe("TransferFrom", () => {
         it("should emit Approval event", async () => {
