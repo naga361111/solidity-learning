@@ -1,13 +1,13 @@
 import hre from "hardhat";
 import { expect } from "chai";
 import { DECIMALS, MINTING_AMOUNT } from "./constant";
-import { Tinybank, MyToken } from "../typechain-types";
+import { TinyBank, MyToken } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("Tinybank", () => {
     let signers: HardhatEthersSigner[];
     let myTokenC: MyToken;
-    let tinyBankC: Tinybank;
+    let tinyBankC: TinyBank;
     beforeEach(async () => {
         signers = await hre.ethers.getSigners();
         myTokenC = await hre.ethers.deployContract("MyToken", [
@@ -16,7 +16,7 @@ describe("Tinybank", () => {
             DECIMALS,
             MINTING_AMOUNT,
         ]);
-        tinyBankC = await hre.ethers.deployContract("Tinybank", [
+        tinyBankC = await hre.ethers.deployContract("TinyBank", [
             await myTokenC.getAddress()
         ]);
         await myTokenC.setManager(tinyBankC.getAddress())
@@ -37,7 +37,13 @@ describe("Tinybank", () => {
             const signer0 = signers[0];
             const stakingAmount = hre.ethers.parseUnits("50", DECIMALS);
             await myTokenC.approve(await tinyBankC.getAddress(), stakingAmount);
-            await tinyBankC.stake(stakingAmount);
+            expect(await tinyBankC.stake(stakingAmount)).to.emit(
+                tinyBankC,
+                "Staked"
+            ).withArgs(
+                signer0.address,
+                stakingAmount
+            );
             expect(await tinyBankC.staked(signer0.address)).to.equal(stakingAmount);
             expect(await tinyBankC.totalStaked()).to.equal(stakingAmount);
             expect(await myTokenC.balanceOf(tinyBankC)).to.equal(await tinyBankC.totalStaked());
@@ -50,7 +56,13 @@ describe("Tinybank", () => {
             const stakingAmount = hre.ethers.parseUnits("50", DECIMALS);
             await myTokenC.approve(await tinyBankC.getAddress(), stakingAmount);
             await tinyBankC.stake(stakingAmount);
-            await tinyBankC.withdraw(stakingAmount);
+            expect(await tinyBankC.withdraw(stakingAmount)).to.emit(
+                tinyBankC,
+                "Withdraw"
+            ).withArgs(
+                stakingAmount,
+                signer0.address,
+            );
             expect(await tinyBankC.staked(signer0.address)).to.equal(0n);
         })
     })
